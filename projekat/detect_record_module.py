@@ -19,11 +19,11 @@ from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow_core.python.keras.utils import Sequence
 from playsound import playsound
 
-BATCH = 8
-TRAIN = 86
+BATCH = 32
+TRAIN = 582
 VALIDATE = 87
 TEST = 51
-EPOCHS = 40
+EPOCHS = 10
 LEARNING_RATE = 0.03
 
 
@@ -129,13 +129,21 @@ class Generator(Sequence):
 
 
 def extract_yellow(img):
-    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    # cv2.imshow("imag_hsv", img)
+    # cv2.waitKey()
+
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+
+    # cv2.imshow("imag_hsv", img_hsv)
+    # cv2.waitKey()
 
     hsv_color1 = np.asarray([20, 100, 100])
     hsv_color2 = np.asarray([30, 255, 255])
 
     img = cv2.inRange(img_hsv, hsv_color1, hsv_color2)
-
+    # cv2.imshow("mask", img)
+    # cv2.waitKey()
     img = np.expand_dims(img, axis=2)
     img = np.float32(img)
     return img
@@ -157,9 +165,13 @@ def open_data(length, path="./data/", single_color=False):
 
     for i in range(length):
         img = cv2.imread(path + "{}.png".format(i))
-        # rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        cv2.imshow("LOAD", img)
+        cv2.waitKey()
+        conv = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        cv2.waitKey()
         if single_color:
             img = extract_yellow(img)
+
 
         # cv2.imwrite("LMAO.png", mask)
         #
@@ -206,8 +218,6 @@ def train_model(single_color=False):
 def grab_interesting_area(d3d):
     pil = d3d.screenshot()
     img = np.asarray(pil)
-    # cv2.imshow("image", img)
-    # cv2.waitKey()
     # img = ImageGrab.grab(bbox=(760, 470, 1140, 610))
     # img = ImageGrab.grab(bbox=(760, 520, 1140, 660))
     # img = ImageGrab.grab(bbox=(760, 570, 1140, 710))
@@ -215,14 +225,14 @@ def grab_interesting_area(d3d):
     return img[520:660, 760:1140]
 
 
-def generate_data(delay=0.3, duration=60, start_delay=3, path="./data/"):
+def generate_data(delay=0.3, duration=60, start_delay=3, path="./data/", start_file=0):
     print("Starting recording in:")
     for i in range(start_delay):
         sleep(1)
         print(3 - i)
 
     sleep(1)
-    index = 0
+    index = start_file
     time = 0
     d3d = d3dshot.create()
     while time < duration:
@@ -230,10 +240,11 @@ def generate_data(delay=0.3, duration=60, start_delay=3, path="./data/"):
 
         # part of the screen
         img = grab_interesting_area(d3d)
+        img = Image.fromarray(img)
         img.save(path + "{}.png".format(index))
 
         # img = np.asarray(img)
-        sleep(0.3)
+        sleep(delay)
         time += delay
         index += 1
 
@@ -317,24 +328,28 @@ def hough(images):
 def record_thread(model, single_color=False):
     d3d = d3dshot.create()
     recording = False
-    samples = np.empty((1, 140, 380, 1))
+    if single_color:
+        samples = np.empty((1, 140, 380, 1))
+    else:
+        samples = np.empty((1, 140, 380, 3))
+
     while True:
         t1 = time()
         arr = grab_interesting_area(d3d)
+        # cv2.imshow("CAPTURE", arr)
+        # cv2.waitKey()
         if single_color:
             arr = extract_yellow(arr)
-        # cv2.imshow("dis", arr)
-        # cv2.waitKey()
         samples[0] = arr
         res = model.predict_classes(samples)
         print(res[0][0])
-        if res[0] == 0 and recording:
+        if res[0][0] == 0 and recording:
             recording = False
             st = threading.Thread(target=end)
             st.daemon = True  # Daemonize thread
             st.start()
             print("ENDED")
-        elif res[0] == 1 and not recording:
+        elif res[0][0] == 1 and not recording:
             recording = True
             st = threading.Thread(target=start)
             st.daemon = True  # Daemonize thread
@@ -358,7 +373,6 @@ def real_time_detection(model_path, start_delay=3, single_color=False):
         sleep(1)
         print(3 - i)
 
-    sleep(1)
 
     model = load_model(model_path)
     record_thread(model, single_color=single_color)
@@ -367,9 +381,11 @@ def real_time_detection(model_path, start_delay=3, single_color=False):
 if __name__ == '__main__':
     # configure_cnn()
     # generate_data()
+    # generate_data(path="./data/", start_file=TRAIN + 1, delay=0.1)
+
     # generate_data(path="./test_data/")
-    # order_files_by_number("./test_data/")
-    # train_model()
+    # order_files_by_number("./data/")
+    # train_model(single_color=True)
 
     # test_model("./MODEL.973.COLOR.h5")
 
@@ -380,4 +396,5 @@ if __name__ == '__main__':
     # test_model("./MODEL.1.h5", single_color=True)
 
     # real_time_detection("./MODEL.987.COLOR.h5")
-    real_time_detection("./MODEL.1.h5", single_color=True)
+    # real_time_detection("./MODEL.1.h5", single_color=True)
+    real_time_detection("./MODEL.1LARGE.h5", single_color=True)
