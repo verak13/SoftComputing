@@ -21,6 +21,8 @@ from keras.utils import Sequence
 from playsound import playsound
 import pyautogui
 
+from projekat.recording_module import RecordingObject
+
 BATCH = 32
 TRAIN = 582
 VALIDATE = 87
@@ -133,7 +135,6 @@ class Generator(Sequence):
 
 
 def extract_yellow(img):
-
     # cv2.imshow("imag_hsv", img)
     # cv2.waitKey()
 
@@ -172,7 +173,6 @@ def open_data(length, path="./data/", single_color=False):
         conv = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         if single_color:
             img = extract_yellow(conv)
-
 
         # cv2.imwrite("LMAO.png", mask)
         #
@@ -326,17 +326,23 @@ def hough(images):
     return results
 
 
-def record_thread(model, single_color=False):
+def record_thread(model, single_color=False, dir="./cuts/"):
     global REC
     d3d = d3dshot.create()
+
+    record_object = RecordingObject(dir)
+
     recording = False
+
+    counter = -1
+
     if single_color:
         samples = np.empty((1, 140, 380, 1))
     else:
         samples = np.empty((1, 140, 380, 3))
 
     while True:
-        t1 = time()
+        # t1 = time()
         arr = grab_interesting_area(d3d)
         # cv2.imshow("CAPTURE", arr)
         # cv2.waitKey()
@@ -344,8 +350,10 @@ def record_thread(model, single_color=False):
             arr = extract_yellow(arr)
         samples[0] = arr
         res = model.predict_classes(samples)
-        #print(res[0][0])
+        # print(res[0][0])
+        t1 = 0
         if res[0][0] == 0 and recording:
+            print(time() - t1)
             recording = False
 
             st = threading.Thread(target=end)
@@ -353,15 +361,19 @@ def record_thread(model, single_color=False):
             st.start()
             sleep(2)
             print("ENDED")
+            record_object.stop_recording(str(counter) + "_cut.mp3")
         elif res[0][0] == 1 and not recording:
             REC.append(RecordingModule())
             recording = True
             st = threading.Thread(target=start)
             st.daemon = True  # Daemonize thread
             st.start()
+            record_object.record_sample()
+            counter += 1
             print("STARTED")
+            t1 = time()
         # sleep(0.04)
-        #print(time() - t1)
+        # print(time() - t1)
 
 
 def start():
@@ -395,7 +407,6 @@ def real_time_detection(model_path, start_delay=3, single_color=False):
     for i in range(start_delay):
         sleep(1)
         print(3 - i)
-
 
     model = load_model(model_path)
     record_thread(model, single_color=single_color)

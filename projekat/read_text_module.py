@@ -6,9 +6,9 @@ import os
 import pyautogui
 import time
 from difflib import SequenceMatcher
-from keras.models import Sequential
-from keras.layers.core import Dense, Activation
-from keras.optimizers import SGD
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Activation
+from tensorflow.keras.optimizers import SGD
 
 def load_image(path):
     return cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
