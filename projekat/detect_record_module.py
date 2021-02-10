@@ -326,8 +326,8 @@ def hough(images):
     return results
 
 
-def record_thread(model, single_color=False, dir="./cuts/"):
-    global REC
+def record_thread(model, single_color=False, dir="./sample/"):
+    global REC, COUNTER
     d3d = d3dshot.create()
 
     record_object = RecordingObject(dir)
@@ -359,17 +359,15 @@ def record_thread(model, single_color=False, dir="./cuts/"):
             st = threading.Thread(target=end)
             st.daemon = True  # Daemonize thread
             st.start()
-            sleep(2)
             print("ENDED")
-            record_object.stop_recording(str(counter) + "_cut.mp3")
+            record_object.stop_recording(str(COUNTER) + "_cut.mp3")
         elif res[0][0] == 1 and not recording:
-            REC.append(RecordingModule())
             recording = True
             st = threading.Thread(target=start)
             st.daemon = True  # Daemonize thread
             st.start()
             record_object.record_sample()
-            counter += 1
+            COUNTER += 1
             print("STARTED")
             t1 = time()
         # sleep(0.04)
@@ -379,23 +377,23 @@ def record_thread(model, single_color=False, dir="./cuts/"):
 def start():
     global COUNTER, START, REC
 
-    index = COUNTER
-    REC[index].record_sample()
+    # index = COUNTER
+    # REC[index].record_sample()
     START = time()
     #playsound("./start.mp3")
 
 
 def end():
     global COUNTER, START, REC
-    index = COUNTER
-    COUNTER += 1
+    # index = COUNTER
+    # COUNTER += 1
     END = time()
     print("Vreme:")
     print(END - START)
     if END - START < 2:
         return
-    REC[index].save_path("sample" + str(COUNTER) + ".wav")
-    REC[index].stop_recording()
+    # REC[index].save_path("sample" + str(COUNTER) + ".wav")
+    # REC[index].stop_recording("")
     pyautogui.click(x=727, y=718)
     #playsound("./end.mp3")
 

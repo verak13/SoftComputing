@@ -1,12 +1,13 @@
 
 from projekat.detect_record_module import real_time_detection
-from projekat.read_text_module import region_detect, load_image
 from pyautogui import *
 import cv2
 import numpy as np
+import threading
 
 
-
+def thread_record():
+    real_time_detection("./MODEL.1LARGE1.h5", single_color=True, start_delay=3)
 
 def recognize(path):
 
@@ -29,7 +30,6 @@ def recognize(path):
 
     cv2.imwrite('result.png', img_rgb)
 
-    print(location, w, h)
     if location:
         location[0] += h/2
         location[1] += w/2
@@ -38,34 +38,65 @@ def recognize(path):
 if __name__ == '__main__':
 
 
+    threading.Thread(target = thread_record).start()
     res = recognize("slicice/songpop2.PNG")
     if res:
         click(res)
-    sleep(2)
-    xDugme = recognize("slicice/xDugme.PNG")
-    if xDugme:
-        click(xDugme)
-    sleep(4)
-    newGame = recognize("slicice/newGame.PNG")
-    if newGame:
-        print(newGame)
-        click(newGame)
-    while True:
-        sleep(1)
-        random = recognize("slicice/rng.PNG")
-        if random:
-            click(random)
+
+    while(True):
+        error = False
         sleep(2)
-        playlist = recognize("slicice/playlist.PNG")
-        if playlist:
-            click(playlist)
-            break
-        else:
-            back = recognize("slicice/nazad.PNG")
-            if back:
-                click(back)
-    sleep(3)
+        xDugme = recognize("slicice/xDugme.PNG")
+        if xDugme:
+            click(xDugme)
 
+        xDugme2 = recognize("slicice/xDugme2.PNG")
+        if xDugme2:
+            click(xDugme2)
+        sleep(3)
+        newGame = recognize("slicice/newGame.PNG")
+        if newGame:
+            print(newGame)
+            click(newGame)
+        while True:
+            sleep(1)
+            random = recognize("slicice/rng.PNG")
+            if random:
+                click(random)
+            sleep(2)
+            playlist = recognize("slicice/todaysHits.PNG")
+            if playlist:
+                click(playlist)
+                sleep(8)
+                xDugme2 = recognize("slicice/xDugme2.PNG")
+                if xDugme2:
+                    click(xDugme2)
+                tooMuchGames = recognize("slicice/GameError.PNG")
+                if tooMuchGames:
+                    ok = recognize("slicice/ok.PNG")
+                    click(ok)
+                    error = True
+                break
+            else:
+                back = recognize("slicice/nazad.PNG")
+                if back:
+                    click(back)
+        if error:
+            continue
 
-    real_time_detection("./MODEL.1LARGE1.h5", single_color=True, start_delay=3)
+        smer = 1
+        while True:
+            home = recognize("slicice/Home.PNG")
+            if home:
+                click(home)
+                break
+            else:
+                if smer == 1:
+                    smer = 0
+                    moveRel(-100, -100)
+                else:
+                    smer = 1
+                    moveRel(100, 100)
+                sleep(3)
+
 
