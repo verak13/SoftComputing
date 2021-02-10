@@ -4,6 +4,8 @@ import wave
 import pyaudio
 
 
+import sqlite3
+
 class RecordingObject:
 
     def __init__(self, path="./", chunk=1024, channels=2, fs=44100):
@@ -50,6 +52,7 @@ class RecordingObject:
         # print('Finished recording')
         #
         # # Save the recorded data as a WAV file
+
 
     def stop_recording(self, file):
         self.filename = file
@@ -104,4 +107,4 @@ if __name__ == '__main__':
     while inp != "x":
         print("Enter 'x' to stop recording: ")
         inp = input()
-    rec.stop_recording()
+    rec.stop_recording("end1.wav")
