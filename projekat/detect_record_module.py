@@ -334,11 +334,11 @@ def end():
     playsound("./end.mp3")
 
 
-def detect_and_record(model, handler=None, single_color=False):
+def detect_and_record(model, handler=None, single_color=False, generating=False):
     global REC
     d3d = d3dshot.create()
 
-    record_object = RecordingObject(record_handler=handler)
+    record_object = RecordingObject(record_handler=handler, generating=generating)
 
     recording = False
 
@@ -365,17 +365,17 @@ def detect_and_record(model, handler=None, single_color=False):
             record_object.stop_recording()
             # print("ENDED")
             # sleep(2)
-            threading.Thread(target=end).start()
+            # threading.Thread(target=end).start()
 
         elif res[0][0] == 1 and not recording:
             recording = True
             record_object.record_sample()
             # print("STARTED")
-            threading.Thread(target=start).start()
+            # threading.Thread(target=start).start()
         # print("DETECT TIME", time() - t1)
 
 
-def real_time_detection(model_path, handler=None, start_delay=0, single_color=False):
+def real_time_detection(model_path, handler=None, start_delay=0, single_color=False, generating=False):
     if start_delay > 0:
         print("Starting recording in:")
         for i in range(start_delay):
@@ -383,7 +383,7 @@ def real_time_detection(model_path, handler=None, start_delay=0, single_color=Fa
             print(3 - i)
     print("Started real time detection and recording.")
     model = load_model(model_path)
-    detect_and_record(model, single_color=single_color, handler=handler)
+    detect_and_record(model, single_color=single_color, handler=handler, generating=generating)
 
 
 if __name__ == '__main__':
@@ -405,4 +405,5 @@ if __name__ == '__main__':
 
     # real_time_detection("./MODEL.987.COLOR.h5")
     # real_time_detection("./MODEL.1.h5", single_color=True)
-    real_time_detection("DETECT_MODEL.h5", single_color=True)
+    # real_time_detection("DETECT_MODEL.h5", single_color=True)
+    real_time_detection("DETECT_MODEL.h5", single_color=True, generating=True)

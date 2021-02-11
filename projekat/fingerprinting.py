@@ -1,5 +1,6 @@
 import threading
 import wave
+from collections import Counter
 from time import time
 
 import numpy as np
@@ -41,7 +42,9 @@ DEFAULT_FAN_VALUE = 15
 # Minimum amplitude in spectrogram in order to be considered a peak.
 # This can be raised to reduce number of fingerprints, but can negatively
 # affect accuracy.
-DEFAULT_AMP_MIN = 10
+DEFAULT_AMP_MIN = 5
+# DEFAULT_AMP_MIN = 10
+# DEFAULT_AMP_MIN = 20
 
 # Number of cells around an amplitude peak in the spectrogram in order
 # for Dejavu to consider it a spectral peak. Higher values mean less
@@ -413,15 +416,36 @@ def do_hash():
         # print(hashes)
     conn1 = sqlite3.connect('songs.db')
     c1 = conn1.cursor()
-    answer = ""
     t1 = time()
-    for hasha, offset in hashes:
-        c1.execute('SELECT song FROM fingerprints WHERE hash = ? group by song order by count(hash) desc', (hasha,))
+    answer = ""
+
+    hashes = list(hashes)
+    print(len(hashes))
+    for index in range(0, len(hashes), 1000):
+        if index + 1000 > len(hashes):
+            j = len(hashes)
+        else:
+            j = index + 1000
+        h = [hashes[k][0] for k in range(index, j)]
+
+        qmark = ", ".join(["?"] * len(h))
+
+        c1.execute(
+            'SELECT song FROM fingerprints WHERE hash in ({}) group by song order by count(hash) desc'.format(qmark), h)
         result = c1.fetchall()
-        print(result)
         if len(result) > 0:
+            print(result)
             answer = result[0][0]
             break
+
+    # for hasha, offset in hashes:
+    #     # c1.execute('Select song From fingerprints WHERE hash=? ORDER BY Difference(hash, ?) DESC', (hasha, hasha))
+    #     c1.execute('SELECT song FROM fingerprints WHERE hash = ?', (hasha,))
+    #     result = c1.fetchall()
+    #     if len(result) > 0:
+    #         print(result)
+    #         answer = result[0][0]
+    #         break
     conn1.close()
 
     # answer = max(answer_dict, key=lambda key: answer_dict[key])
@@ -433,18 +457,18 @@ def do_hash():
 if __name__ == '__main__':
     # take_fingerprints("start.wav", "numa numa ej")
 
-    # conn = sqlite3.connect('songs.db')
-    # c = conn.cursor()
-    # c.execute('''CREATE TABLE fingerprints (song, hash, offset)''')
-    # conn.close()
-
-    # for filename in os.listdir('data'):
-    #    if filename.endswith(".wav"):
-    #        print(os.path.join('data', filename))
-    #        take_fingerprints(os.path.join('data', filename), filename)
-    #        continue
-    #    else:
-    #        continue
+    conn = sqlite3.connect('songs.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE fingerprints (song, hash, offset)''')
+    conn.close()
+    i = 0
+    for filename in os.listdir('data'):
+        if filename.endswith(".wav"):
+            print("================================================")
+            print(i, os.path.join('data', filename))
+            print("================================================")
+            take_fingerprints(os.path.join('data', filename), filename)
+            i += 1
 
     conn1 = sqlite3.connect('songs.db')
     c1 = conn1.cursor()

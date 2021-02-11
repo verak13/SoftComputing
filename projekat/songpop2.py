@@ -11,24 +11,25 @@ from projekat.read_text_module import OCR
 
 
 class SongPop2Solver:
-    def __init__(self, detect_model, ocr_model):
+    def __init__(self, detect_model, ocr_model, generating=False):
         self.detect_model = detect_model
         self.ocr_model = ocr_model
-        self.ocr = OCR(self.ocr_model)
+        if not generating:
+            self.ocr = OCR(self.ocr_model)
 
         # TODO implementirati hash
         self.hash = None
 
+        self.generating = generating
+
     def handle(self):
-        # TODO spojiti hash sa ocr
+        print("HANDLING")
         answer = do_hash()
         self.ocr.click_closest_answer(answer)
-
-        # TODO zameniti
         # pyautogui.click(x=727, y=718)
 
     def thread_record(self):
-        real_time_detection(self.detect_model, self, single_color=True, start_delay=0)
+        real_time_detection(self.detect_model, self, single_color=True, start_delay=0, generating=self.generating)
 
     def recognize(self, path):
         template = cv2.imread(path)
@@ -129,16 +130,17 @@ class SongPop2Solver:
                 if home:
                     click(home)
                     break
-                # else:
-                #     if smer == 1:
-                #         smer = 0
-                #         moveRel(-100, -100)
-                #     else:
-                #         smer = 1
-                #         moveRel(100, 100)
-                #     sleep(3)
+                else:
+                    if smer == 1:
+                        smer = 0
+                        moveRel(-10, -10)
+                    else:
+                        smer = 1
+                        moveRel(10, 10)
+                    sleep(1)
 
 
 if __name__ == '__main__':
     songpop2 = SongPop2Solver("./DETECT_MODEL.h5", "./TEXT_MODEL.h5")
+    # songpop2 = SongPop2Solver("./DETECT_MODEL.h5", "./TEXT_MODEL.h5", generating=True)
     songpop2.play()

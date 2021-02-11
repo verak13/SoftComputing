@@ -131,7 +131,6 @@ def display_result(outputs, alphabet):
 def select_roi_with_distances(image_orig, image_bin):
     contours, hierarchy = cv2.findContours(image_bin.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     regions_array = []
-    print(len(contours))
     for i in range(0, len(contours)):
         center1, size1, angle1 = cv2.minAreaRect(contours[i])
         width1, height1 = size1
@@ -409,8 +408,9 @@ def detect_with_model(model, answer, ss=True, img_path=None):
     index = result[2]
     resultText = result[1]
     score = result[0]
-    print(score, resultText)
-
+    print()
+    print(score, resultText, " -> ", answer)
+    print()
     # cv2.imshow("Winner", X[index])
     # cv2.waitKey()
     pyautogui.moveTo(DIMS[index][2] + 10, DIMS[index][0] + 10)
