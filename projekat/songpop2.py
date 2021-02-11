@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import threading
 
+from projekat.fingerprinting import do_hash
 from projekat.read_text_module import OCR
 
 
@@ -18,17 +19,16 @@ class SongPop2Solver:
         # TODO implementirati hash
         self.hash = None
 
-    def handle(self, data):
+    def handle(self):
         # TODO spojiti hash sa ocr
-
-        # answer = self.hash.resolve(data)
-        # self.ocr.click_closest_answer(answer)
+        answer = do_hash()
+        self.ocr.click_closest_answer(answer)
 
         # TODO zameniti
-        pyautogui.click(x=727, y=718)
+        # pyautogui.click(x=727, y=718)
 
     def thread_record(self):
-        real_time_detection(self.detect_model, self, single_color=True, start_delay=3)
+        real_time_detection(self.detect_model, self, single_color=True, start_delay=0)
 
     def recognize(self, path):
         template = cv2.imread(path)
@@ -57,7 +57,9 @@ class SongPop2Solver:
 
     def play(self):
 
-        threading.Thread(target=self.thread_record).start()
+        detection = threading.Thread(target=self.thread_record)
+        detection.setDaemon(True)
+        detection.start()
 
         res = self.recognize("slicice/songpop2.PNG")
         if res:
@@ -127,14 +129,14 @@ class SongPop2Solver:
                 if home:
                     click(home)
                     break
-                else:
-                    if smer == 1:
-                        smer = 0
-                        moveRel(-100, -100)
-                    else:
-                        smer = 1
-                        moveRel(100, 100)
-                    sleep(3)
+                # else:
+                #     if smer == 1:
+                #         smer = 0
+                #         moveRel(-100, -100)
+                #     else:
+                #         smer = 1
+                #         moveRel(100, 100)
+                #     sleep(3)
 
 
 if __name__ == '__main__':

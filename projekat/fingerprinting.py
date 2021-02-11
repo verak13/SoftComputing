@@ -1,5 +1,7 @@
 import threading
 import wave
+from time import time
+
 import numpy as np
 import pyaudio
 import sqlite3
@@ -7,6 +9,7 @@ import scipy.io
 from scipy.io import wavfile
 import random
 import os
+import operator
 
 import hashlib
 import matplotlib.mlab as mlab
@@ -15,7 +18,6 @@ import matplotlib.pyplot as plt
 from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.morphology import (generate_binary_structure, iterate_structure, binary_erosion)
 from operator import itemgetter
-
 
 IDX_FREQ_I = 0
 IDX_TIME_J = 1
@@ -69,7 +71,6 @@ def fingerprint(channel_samples, Fs=DEFAULT_FS,
                 fan_value=DEFAULT_FAN_VALUE,
                 amp_min=DEFAULT_AMP_MIN,
                 plots=False):
-
     # FFT the channel, log transform output, find local maxima, then return
     # locally sensitive hashes.
     # FFT the signal and extract frequency components
@@ -82,18 +83,18 @@ def fingerprint(channel_samples, Fs=DEFAULT_FS,
         window=mlab.window_hanning,
         noverlap=int(wsize * wratio))[0]
 
-    #print(len(arr2D) * len(arr2D[0]))
-    #print(len(arr2D))
-    #print(len(arr2D[0]))
-    #print(len(channel_samples))
-    #print(arr2D[0])
+    # print(len(arr2D) * len(arr2D[0]))
+    # print(len(arr2D))
+    # print(len(arr2D[0]))
+    # print(len(channel_samples))
+    # print(arr2D[0])
     # apply log transform since specgram() returns linear array
-    #print(np.log10(arr2D))
-    arr2D = 10 * np.log10(arr2D) # calculates the base 10 logarithm for all elements of arr2D
+    # print(np.log10(arr2D))
+    arr2D = 10 * np.log10(arr2D)  # calculates the base 10 logarithm for all elements of arr2D
     arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
 
-    #print(arr2D[0])
-    #print(arr2D[1])
+    # print(arr2D[0])
+    # print(arr2D[1])
 
     '''
     print("=======================================")
@@ -123,12 +124,12 @@ def fingerprint(channel_samples, Fs=DEFAULT_FS,
     print("++++++++++++++++++++++++++++++++++++++++")
     '''
 
-
     # find local maxima
     local_maxima = get_2D_peaks(arr2D, plot=plots, amp_min=amp_min)
 
     # return hashes
     return generate_hashes(local_maxima, fan_value=fan_value)
+
 
 def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
     struct = generate_binary_structure(2, 1)
@@ -151,45 +152,46 @@ def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
     amps = amps.flatten()
     peaks = zip(i, j, amps)
     peaks_filtered = [x for x in peaks if x[2] > amp_min]  # freq, time, amp
-    #print(peaks_filtered)
+    # print(peaks_filtered)
 
     # get indices for frequency and time
     frequency_idx = [x[1] for x in peaks_filtered]
     time_idx = [x[0] for x in peaks_filtered]
 
-    #print(frequency_idx, time_idx)
+    # print(frequency_idx, time_idx)
     return zip(frequency_idx, time_idx)
+
 
 # Hash list structure: sha1_hash[0:20] time_offset
 # example: [(e05b341a9b77a51fd26, 32), ... ]
 def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
     if PEAK_SORT:
-      peaks = sorted(peaks, key = itemgetter(1))
+        peaks = sorted(peaks, key=itemgetter(1))
 
     # bruteforce all peaks
     for i in range(len(peaks)):
-      for j in range(1, fan_value):
-        if (i + j) < len(peaks):
+        for j in range(1, fan_value):
+            if (i + j) < len(peaks):
 
-          # take current & next peak frequency value
-          freq1 = peaks[i][IDX_FREQ_I]
-          freq2 = peaks[i + j][IDX_FREQ_I]
+                # take current & next peak frequency value
+                freq1 = peaks[i][IDX_FREQ_I]
+                freq2 = peaks[i + j][IDX_FREQ_I]
 
-          # take current & next -peak time offset
-          t1 = peaks[i][IDX_TIME_J]
-          t2 = peaks[i + j][IDX_TIME_J]
+                # take current & next -peak time offset
+                t1 = peaks[i][IDX_TIME_J]
+                t2 = peaks[i + j][IDX_TIME_J]
 
-          # get diff of time offsets
-          t_delta = t2 - t1
+                # get diff of time offsets
+                t_delta = t2 - t1
 
-          # check if delta is between min & max
-          if t_delta >= MIN_HASH_TIME_DELTA and t_delta <= MAX_HASH_TIME_DELTA:
-            h = hashlib.sha1("%s|%s|%s".encode('utf-8') % (str(freq1).encode('utf-8'), str(freq2).encode('utf-8'), str(t_delta).encode('utf-8')))
-            yield (h.hexdigest()[0:FINGERPRINT_REDUCTION], t1)
+                # check if delta is between min & max
+                if t_delta >= MIN_HASH_TIME_DELTA and t_delta <= MAX_HASH_TIME_DELTA:
+                    h = hashlib.sha1("%s|%s|%s".encode('utf-8') % (
+                        str(freq1).encode('utf-8'), str(freq2).encode('utf-8'), str(t_delta).encode('utf-8')))
+                    yield (h.hexdigest()[0:FINGERPRINT_REDUCTION], t1)
 
 
-
-#drugi nacin - pokusaj, nije gotovo
+# drugi nacin - pokusaj, nije gotovo
 '''
 def fingerprint(channel_samples, Fs=DEFAULT_FS,
                 wsize=DEFAULT_WINDOW_SIZE,
@@ -354,7 +356,6 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
 '''
 
 
-
 def take_fingerprints(file, filename):
     print("start")
 
@@ -399,18 +400,45 @@ def take_fingerprints(file, filename):
     conn.close()
 
 
+def do_hash():
+    file = "sample/sample.wav"
+    wf = wave.open(file, 'rb')
+
+    samplerate, data = wavfile.read(file)
+    hashes = set()
+    for i in range(wf.getnchannels()):
+        channel_hashes = fingerprint(data[:, i], Fs=wf.getframerate())
+        channel_hashes = set(channel_hashes)
+        hashes |= channel_hashes
+        # print(hashes)
+    conn1 = sqlite3.connect('songs.db')
+    c1 = conn1.cursor()
+    answer = ""
+    t1 = time()
+    for hasha, offset in hashes:
+        c1.execute('SELECT song FROM fingerprints WHERE hash = ? group by song order by count(hash) desc', (hasha,))
+        result = c1.fetchall()
+        print(result)
+        if len(result) > 0:
+            answer = result[0][0]
+            break
+    conn1.close()
+
+    # answer = max(answer_dict, key=lambda key: answer_dict[key])
+    print("DB time", time() - t1)
+    print(answer)
+    return answer
+
 
 if __name__ == '__main__':
+    # take_fingerprints("start.wav", "numa numa ej")
 
-    #take_fingerprints("start.wav")
+    # conn = sqlite3.connect('songs.db')
+    # c = conn.cursor()
+    # c.execute('''CREATE TABLE fingerprints (song, hash, offset)''')
+    # conn.close()
 
-    #conn = sqlite3.connect('songs.db')
-    #c = conn.cursor()
-    #c.execute('''CREATE TABLE fingerprints (song, hash, offset)''')
-    #conn.close()
-
-
-    #for filename in os.listdir('data'):
+    # for filename in os.listdir('data'):
     #    if filename.endswith(".wav"):
     #        print(os.path.join('data', filename))
     #        take_fingerprints(os.path.join('data', filename), filename)
@@ -425,8 +453,4 @@ if __name__ == '__main__':
     print(c1.fetchall())
     conn1.close()
 
-
-
-    #print(int.from_bytes(b'\x02\x00\x00\x00\x00\x00\x00\x00', 'little'))
-
-
+    # print(int.from_bytes(b'\x02\x00\x00\x00\x00\x00\x00\x00', 'little'))

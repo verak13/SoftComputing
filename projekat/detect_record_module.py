@@ -326,6 +326,14 @@ def hough(images):
     return results
 
 
+def start():
+    playsound("./start.mp3")
+
+
+def end():
+    playsound("./end.mp3")
+
+
 def detect_and_record(model, handler=None, single_color=False):
     global REC
     d3d = d3dshot.create()
@@ -334,16 +342,13 @@ def detect_and_record(model, handler=None, single_color=False):
 
     recording = False
 
-    counter = -1
-
     if single_color:
         samples = np.empty((1, 140, 380, 1))
     else:
         samples = np.empty((1, 140, 380, 3))
 
-    start = time()
-
     while True:
+        # t1 = time()
 
         arr = grab_interesting_area(d3d)
 
@@ -351,24 +356,23 @@ def detect_and_record(model, handler=None, single_color=False):
             arr = extract_yellow(arr)
         samples[0] = arr
         res = model.predict_classes(samples)
-
         if res[0][0] == 0 and recording:
             recording = False
-            end = time()
             # print("Vreme:")
             # print(end - start)
             # if end - start < 2:
             #     return
-            record_object.stop_recording("sample" + str(counter) + ".wav")
-            print("ENDED")
+            record_object.stop_recording()
+            # print("ENDED")
             # sleep(2)
+            threading.Thread(target=end).start()
+
         elif res[0][0] == 1 and not recording:
             recording = True
             record_object.record_sample()
-            counter += 1
-            print("STARTED")
-            # start = time()
-
+            # print("STARTED")
+            threading.Thread(target=start).start()
+        # print("DETECT TIME", time() - t1)
 
 
 def real_time_detection(model_path, handler=None, start_delay=0, single_color=False):

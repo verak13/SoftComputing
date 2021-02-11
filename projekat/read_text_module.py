@@ -251,8 +251,8 @@ def get_most_similar(correct, answers):
 
 def prepare_img_for_roi(img):
     img_bin = image_binn(image_grayy(img))
-    cv2.imshow("W", img_bin)
-    cv2.waitKey()
+    # cv2.imshow("W", img_bin)
+    # cv2.waitKey()
     # kernel = np.asarray([
     #         [0, 0, 0, 0, 1, 0, 0, 0, 0],
     #         [0, 0, 0, 0, 1, 0, 0, 0, 0],
@@ -351,15 +351,17 @@ def detect_with_model(model, answer, ss=True, img_path=None):
     if ss:
 
         imm = pyautogui.screenshot()
-        imm.save(os.path.join(dirname, 'songpop_text\screen1.png'))
+        # imm.save(os.path.join(dirname, 'songpop_text\screen1.png'))
 
         # im = load_image('C:\\Users\Korisnik\PycharmProjects\proj\songpop_text\screenshot5.jpg')
-        im = load_image(os.path.join(dirname, 'songpop_text\screen1.png'))
+        # im = load_image(os.path.join(dirname, 'songpop_text\screen1.png'))
+
+        im = np.array(imm)
     else:
         im = load_image(os.path.join(dirname, img_path))
 
     for i in range(4):
-        X.append(im[DIMS[i][0]:DIMS[i][1], DIMS[i][2]:DIMS[i][3]].copy())
+        X.append(im[DIMS[i][0]:DIMS[i][1], DIMS[i][2]:DIMS[i][3]])
         # display_image(X[i])
 
         scale_percent = 182.95  # percent of original size
@@ -398,8 +400,16 @@ def detect_with_model(model, answer, ss=True, img_path=None):
         print(res)
         answers.append(res)
 
-    result, resultText, index = get_most_similar(answer, answers)
-    print(result, resultText)
+    solutions = answer.split("--")
+    results = []
+    for a in solutions:
+        score, resultText, index = get_most_similar(a, answers)
+        results.append((score, resultText, index))
+    result = max(results, key=lambda x: x[0])
+    index = result[2]
+    resultText = result[1]
+    score = result[0]
+    print(score, resultText)
 
     # cv2.imshow("Winner", X[index])
     # cv2.waitKey()
