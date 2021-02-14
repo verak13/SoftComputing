@@ -16,6 +16,7 @@ from projekat.read_text_module import OCR
 class RecordingObject:
 
     def __init__(self, chunk=1024, channels=2, fs=44100, record_handler=None):
+        self.thread = None
         self.filename = None
         self.data = []
         self.chunk_size = chunk
