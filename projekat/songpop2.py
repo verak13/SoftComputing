@@ -153,6 +153,8 @@ class SongPop2Solver:
                             back = self.recognize("slicice/nazad.PNG")
                             if back:
                                 click(back)
+            else:
+                continue
             if error:
                 continue
 
