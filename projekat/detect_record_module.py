@@ -283,30 +283,6 @@ def predict_model(path):
     print(res2)
 
 
-def hough(images):
-    length = len(images)
-    results = np.empty(length)
-    i = 0
-    for img in images:
-        # if img.empty():
-        #     print(i)
-        print(np.count_nonzero(img))
-        try:
-            circles = cv2.HoughCircles(img, cv2.HOUGH_GRADIENT, 1, 1)
-            if circles is not None:
-                results[i] = 1
-                circles = np.uint16(np.around(circles))
-                for i in circles[0, :]:
-                    cv2.circle(img, (i[0], i[1]), i[2], (0, 255, 0), 2)
-            cv2.imshow('img', img)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-            results[i] = 0
-        except Exception as e:
-            print(e)
-    return results
-
-
 def start():
     playsound("./start.mp3")
 
